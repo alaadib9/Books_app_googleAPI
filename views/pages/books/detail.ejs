@@ -18,7 +18,14 @@
                 <h3>
                     isbn: <%= item.isbn %>
                 </h3>
-        </section>
+
+            </section>
+        <form action="/delete/<%=item.id%>?_method=delete" method="post" class="btnForm">
+            <button type="submit" class="btn">delete</button>
+          </form>
+        <section id='update_form'>
+            <%- include ('edit.ejs') %> 
+           </section> 
     </body>
 
 </html>
