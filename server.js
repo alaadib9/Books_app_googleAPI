@@ -5,6 +5,7 @@ const cors = require('cors');
 const superagent = require('superagent');
 const path = require('path');
 const pg = require('pg');
+const methodOverride=require('method-override')
 
 // ...............................................................................CONFIGURATIONS
 let app = express();
@@ -12,7 +13,9 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.set('view engine', 'ejs')
+app.set('view engine', 'ejs');
+app.use(methodOverride('_method'));
+
 
 require('dotenv').config();
 const PORT = process.env.PORT || 3000;
@@ -25,8 +28,12 @@ app.get('/', handelHome);
 app.get('/searches/new', handelSearchForm);
 app.get('/books/:id', handelSingularBook);
 
+// update data for the selected book when open rout '/update/
+app.put('/books/:id' , handelUpdate )
 app.post('/searches', hanelSearch);
 app.post('/books', handleAddBook)
+// Delete the selected book when open rout '/delete/'
+app.delete('/books/:id', deleteBook);
 
 app.get('*', handle404);
 // ...........................................................................HANDLERS FUNCTIONS
@@ -92,6 +99,23 @@ function hanelSearch(req, res) {
         })
 }
 
+function handelUpdate(req , res ) {
+    const searchBook = req.body;
+    let saveValue = req.params.id;
+console.log(searchBook)
+    let updateQuery = 'UPDATE books SET author=$1 , title=$2 , isbn=$3 , description=$4 WHERE id=$5'
+    let arrayOfUpdate = [searchBook.author,searchBook.title,searchBook.isbn,searchBook.description , saveValue]
+    client.query(updateQuery , arrayOfUpdate)
+    .then(()=> res.redirect(`/books/${saveValue}`))
+}
+
+function deleteBook(req , res ) {
+    let SQL = 'DELETE FROM books WHERE id=$1';
+  let value = req.params.id;
+  return client.query(SQL, value)
+    .then(res.redirect('/'))
+}
+
 function handle404(req, res) {
     res.send('404! this route dose not exist !!');
 }
@@ -110,16 +134,3 @@ client.connect()
         app.listen(PORT, () => console.log('server is running perfectly .. ', PORT))
     })
     .catch(error => console.log('error occured while connecting to database : ', error));
-
-
-
-// add default values to the data base
-// let dbQuery = 'INSERT INTO books (author, title,isbn,image_url, description) VALUES ($1, $2 , $3 , $4 , $5)';
-// let saveValues = [
-//     "Karen M. Ross",
-//     "Index to the English Catalogue of Books ...",
-//     "123-4567-789",
-//     "http://books.google.com/books/content?id=LK7fAAAAMAAJ&printsec=frontcover&img=1&zoom=5&edge=curl&source=gbs_api",
-//     "description An essential handbook for international lawyers and students Focusing on vocabulary, Essential Legal English in Context introduces the US legal system and its terminology. Designed especially for foreign-trained lawyers and students whose first language is not English, the book is a must-read for those who want to expand their US legal vocabulary and basic understanding of US government. Ross uses a unique approach by selecting legal terms that arise solely within the context of the levels and branches of US government, including terminology related to current political issues such as partisanship. Inspired by her students’ questions over her years of teaching"
-
-// ]; 
